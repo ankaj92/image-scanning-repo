@@ -1,8 +1,9 @@
-# Use an old, vulnerable base image for demonstration
 FROM openjdk:8-jre
 
 WORKDIR /app
 COPY . /app
+
+RUN chmod +x gradlew
 
 RUN ./gradlew build
 
