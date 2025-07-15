@@ -6,6 +6,7 @@ import java.util.*;
 public class App {
     public static void main(String[] args) throws Exception {
         // Vulnerable: Hardcoded secret and unsafe file read
+        // This is a demonstration of a vulnerable application
         String secret = "hardcoded-password";
         System.out.println("Secret: " + secret);
 
