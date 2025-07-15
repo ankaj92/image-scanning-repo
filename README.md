@@ -1,139 +1,134 @@
-# Image Scanning
+# 🐳 Image Scanning with Trivy – Java + Gradle + GitHub Actions
 
-## Objective
+## 📘 Overview
 
-Implement container image scanning in the CI/CD pipeline to ensure container image security for a vulnerable Java application.
+This project integrates **Trivy**, an open-source container image scanning tool, into a CI/CD pipeline for a Java application built with **Gradle**. The goal is to automate security checks on Docker images for known vulnerabilities.
 
----
-
-## What is a Container Image?
-
-A **container image** is a lightweight, standalone, executable package that includes everything needed to run a piece of software: code, runtime, libraries, environment variables, and configuration files.  
-A **container** is a running instance of an image, providing isolation and portability.
-
-**Difference:**
-
-- _Image_: Blueprint (static, reusable)
-- _Container_: Running process (dynamic, isolated)
+> ✅ Build Tool: **Gradle + Wrapper**
+> ✅ CI Platform: **GitHub Actions**
+> ✅ Base Image: `openjdk:17-jdk`
 
 ---
 
-## Project Structure
+## 🎯 Objectives
+
+- Automate image scanning in CI/CD
+- Detect critical and high-severity CVEs
+- Export reports as artifacts (JSON)
+- Display scan summary in logs
+
+---
+
+## 🐋 What is a Container Image?
+
+A **container image** is a lightweight package containing the runtime, libraries, app code, and dependencies. A **container** is a running instance of this image.
+
+> Image = Blueprint, Container = Running Instance
+
+---
+
+## 🧰 Tools Used
+
+| Tool               | Purpose                           |
+| ------------------ | --------------------------------- |
+| **Trivy**          | Vulnerability scanning for images |
+| **Docker**         | Image build and run               |
+| **GitHub Actions** | CI/CD Pipeline Integration        |
+
+---
+
+## 🗂️ Project Structure
 
 ```
-Image-scanning/
-├── build.gradle
-├── settings.gradle
-├── Dockerfile
-├── src/
-│   └── main/
-│       └── java/
-│           └── com/
-│               └── example/
-│                   └── App.java
-└── .github/
-    └── workflows/
-        └── pipeline.yml
-```
-
----
-
-## Vulnerable Java Application
-
-**App.java** contains:
-
-- Hardcoded secret
-- Unsafe file read (user input used for file access)
-- Outdated dependency (`commons-collections4:4.0`)
-
----
-
-## Dockerfile
-
-Uses an old base image (`openjdk:8-jre`) for demonstration.
-
----
-
-## Image Scanning Tool
-
-**Tool Used:** [Trivy](https://github.com/aquasecurity/trivy) (Open Source)
-
----
-
-## CI/CD Pipeline Integration
-
-- **GitHub Actions** workflow (`.github/workflows/pipeline.yml`)
-- Steps:
-  1. Checkout code
-  2. Set up JDK 8
-  3. Build Docker image
-  4. Install Trivy
-  5. Scan Docker image with Trivy (JSON report)
-  6. Upload scan report as artifact
-  7. Show scan summary (CRITICAL/HIGH vulnerabilities)
-
----
-
-## Running Locally
-
-```bash
-docker build -t image-scanning-demo .
-trivy image image-scanning-demo --format table
-trivy image image-scanning-demo --format json --output trivy-report.json
+assignment6/
+└── image-scanning-demo/
+    ├── build.gradle
+    ├── settings.gradle
+    ├── Dockerfile
+    ├── src/main/java/com/example/App.java
+    └── .github/workflows/sca-docker-image.yml
 ```
 
 ---
 
-## Sample Scan Results & Mitigation
+## 📄 Dockerfile (Base Image)
 
-| Vulnerability ID | Package              | Severity | Recommendation            |
-| ---------------- | -------------------- | -------- | ------------------------- |
-| CVE-2015-6420    | commons-collections4 | HIGH     | Upgrade to latest version |
-| CVE-2019-1234    | openjdk:8-jre        | CRITICAL | Use a newer base image    |
-| Hardcoded Secret | App.java             | HIGH     | Use environment variables |
+```Dockerfile
+FROM openjdk:17-jdk AS runtime
 
-**Mitigation Steps:**
+WORKDIR /app
 
-- Upgrade dependencies in `build.gradle`
-- Use a secure base image (e.g., `openjdk:17-jre`)
-- Remove hardcoded secrets from code
+COPY build/libs/image-scanning.jar /app/app.jar
+
+CMD ["java", "-jar", "/app/app.jar"]
+```
 
 ---
 
-## Comparative Analysis: Trivy vs Docker Scout
+## ⚙️ GitHub Actions Workflow Highlights
 
-| Feature          | Trivy (Open Source) | Docker Scout (Docker Official) |
-| ---------------- | ------------------- | ------------------------------ |
-| Cost             | Free                | Free (limited), paid options   |
-| Ecosystem        | Broad (OCI images)  | Docker-centric                 |
-| Output Formats   | Table, JSON, SARIF  | Table, JSON                    |
-| SBOM Support     | Yes                 | Yes                            |
-| Vulnerability DB | Community           | Docker-maintained              |
-| Integration      | Easy (CLI, CI/CD)   | Docker CLI, CI/CD              |
-
----
-
-## Evidence
-
-- **Artifacts:** `trivy-report.json` (scan results)
-- **Logs:** Pipeline output showing vulnerabilities
-- **Screenshots:** SonarQube, Trivy, or Docker Scout dashboards (if available)
+```yaml
+- Build Java project with ./gradlew
+- Build Docker image: image-scanning-demo
+- Install and run Trivy
+- Export JSON report: trivy-report.json
+- Show CRITICAL/HIGH findings in logs
+- Upload report as artifact
+```
 
 ---
 
-## Impact Analysis & Recommendations
+## ✅ Scan Output Summary (Sample)
 
-- **Impact:** Fixing critical vulnerabilities reduces risk of exploitation.
-- **Blockers:** Some vulnerabilities may not have fixes; document and monitor.
-- **Recommendations:**
-  - Set up regular scans in CI.
-  - Enable alerts for new vulnerabilities.
-  - Document “not-fixed” vulnerabilities and mitigation steps.
+| Vulnerability ID | Package | Severity | Fix                  |
+| ---------------- | ------- | -------- | -------------------- |
+| CVE-2022-37434   | zlib    | HIGH     | Upgrade base image   |
+| CVE-2021-37714   | glibc   | CRITICAL | Use updated OS image |
+| CVE-2022-29458   | bash    | HIGH     | Rebuild with patches |
 
 ---
 
-## References
+## 🛡️ Recommendations
 
-- [Trivy Documentation](https://aquasecurity.github.io/trivy/)
-- [Docker Scout](https://docs.docker.com/scout/)
-- [OWASP Vulnerable Dependency](https://owasp.org/www-project-dependency-check/)
+- **Use minimal base images** like `eclipse-temurin:17-jre-alpine`
+- **Rebuild Docker image** regularly to fetch upstream patches
+- **Mitigate hardcoded secrets** (e.g., `hardcoded-password`)
+- Use Trivy in both `table` and `json` formats for CI + reporting
+- Add a scheduled scan trigger (weekly/cron)
+
+---
+
+## 🧪 Comparative: Trivy vs Docker Scout
+
+| Feature           | Trivy         | Docker Scout   |
+| ----------------- | ------------- | -------------- |
+| Open Source       | ✅ Yes        | ⚠️ Partial     |
+| Scan Accuracy     | ✅ High       | ✅ High        |
+| Format Support    | ✅ JSON/SARIF | ✅ Table       |
+| Ecosystem Support | ✅ Broad      | 🔒 Docker-only |
+
+> 📌 Use Trivy for extensibility and community adoption.
+
+---
+
+## 📎 Submission Artifacts
+
+- ✅ Dockerfile & CI Pipeline
+- ✅ Trivy scan reports (JSON)
+- ✅ Log summary of HIGH/CRITICAL vulnerabilities
+- ✅ Recommendations & mitigation plan
+- ✅ Optional: Tool comparison
+
+---
+
+## 📌 Conclusion
+
+This pipeline demonstrates secure software delivery using **Trivy** for vulnerability scanning of container images. Integrated directly into GitHub Actions, this solution enables real-time visibility into high-risk CVEs, supports artifact-based audit trails, and enhances container security without adding friction to the development workflow.
+
+---
+
+## 🔗 References
+
+- [Trivy Docs](https://aquasecurity.github.io/trivy)
+- [Dockerfile Best Practices](https://docs.docker.com/develop/develop-images/dockerfile_best-practices/)
+- [GitHub Actions Docs](https://docs.github.com/en/actions)
