@@ -1,0 +1,12 @@
+plugins {
+    id 'java'
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    // Intentionally using an old version for vulnerability demonstration
+    implementation 'org.apache.commons:commons-collections4:4.0'
+}
