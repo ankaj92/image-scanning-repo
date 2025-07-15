@@ -1,4 +1,4 @@
-name: Image Scanning Demo
+name: Image Scanning
 
 on:
   push:
