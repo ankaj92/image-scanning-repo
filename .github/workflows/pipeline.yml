@@ -1,4 +1,4 @@
-name: Image Scanning
+name: Build, Package, and Scan Docker Image
 
 on:
   push:
@@ -9,17 +9,24 @@ on:
 jobs:
   build-and-scan:
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Set up JDK 8
+      - name: Set up JDK 17
         uses: actions/setup-java@v3
         with:
-          java-version: "8"
+          java-version: "17"
           distribution: "temurin"
 
-      - name: Build Docker image
+      - name: Grant execute permissions for gradlew
+        run: chmod +x ./gradlew
+
+      - name: Build Java project
+        run: ./gradlew build
+
+      - name: Build Docker image from compiled code
         run: docker build -t image-scanning-demo .
 
       - name: Install Trivy
@@ -29,7 +36,7 @@ jobs:
           wget https://github.com/aquasecurity/trivy/releases/latest/download/trivy_0.51.1_Linux-64bit.deb
           sudo dpkg -i trivy_0.51.1_Linux-64bit.deb
 
-      - name: Scan Docker image with Trivy
+      - name: Scan Docker image with Trivy (JSON report)
         run: trivy image image-scanning-demo --format json --output trivy-report.json
 
       - name: Upload scan report
@@ -38,5 +45,5 @@ jobs:
           name: trivy-report
           path: trivy-report.json
 
-      - name: Show scan summary
+      - name: Show scan summary (CRITICAL/HIGH)
         run: trivy image image-scanning-demo --severity CRITICAL,HIGH --format table
